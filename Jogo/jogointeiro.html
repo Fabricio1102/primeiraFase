@@ -1,0 +1,1568 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tormenta & Sangue - RPG Dark Fantasy</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Cinzel:wght@400;600;700;900&family=MedievalSharp&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --color-blood: #880808;
+            --color-gold: #c5a059;
+            --color-dark: #08070a;
+        }
+
+        body {
+            font-family: 'Cinzel', serif;
+            background-color: #030305;
+            color: #d1d5db;
+            user-select: none;
+            overflow-x: hidden;
+        }
+
+        .font-gothic { font-family: 'Cinzel Decorative', cursive, serif; }
+        .font-medieval { font-family: 'MedievalSharp', cursive; }
+
+        /* Molduras Medievais */
+        .gothic-card {
+            border: 2px solid #3a3227;
+            background: linear-gradient(145deg, rgba(18, 16, 21, 0.95) 0%, rgba(8, 7, 10, 0.98) 100%);
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.9), 0 10px 30px rgba(0,0,0,0.8);
+            backdrop-filter: blur(8px);
+        }
+
+        .gothic-card-gold {
+            border-color: #c5a059;
+            box-shadow: inset 0 0 25px rgba(197, 160, 89, 0.15), 0 0 25px rgba(197, 160, 89, 0.25);
+        }
+
+        .blood-btn {
+            background: linear-gradient(180deg, #5c0808 0%, #200000 100%);
+            border: 1px solid #991b1b;
+            color: #f3f4f6;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .blood-btn:hover:not(:disabled) {
+            background: linear-gradient(180deg, #991b1b 0%, #450a0a 100%);
+            border-color: #ef4444;
+            box-shadow: 0 0 15px rgba(239, 68, 68, 0.6);
+            transform: translateY(-2px);
+        }
+
+        .blood-btn:disabled {
+            opacity: 0.35;
+            cursor: not-allowed;
+            filter: grayscale(0.8);
+        }
+
+        .gold-btn {
+            background: linear-gradient(180deg, #855e1a 0%, #3a2707 100%);
+            border: 1px solid #c5a059;
+            color: #fef08a;
+            transition: all 0.2s ease;
+        }
+
+        .gold-btn:hover:not(:disabled) {
+            background: linear-gradient(180deg, #c5a059 0%, #63440e 100%);
+            box-shadow: 0 0 15px rgba(197, 160, 89, 0.5);
+            transform: translateY(-2px);
+        }
+
+        /* Bar de Vida e Estamina */
+        .bar-container {
+            background: #0d0d11;
+            border: 1px solid #2d2b38;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.9);
+        }
+
+        .hp-fill {
+            background: linear-gradient(90deg, #7f1d1d, #ef4444, #f87171);
+            transition: width 0.4s ease-out;
+            box-shadow: 0 0 10px rgba(239, 68, 68, 0.5);
+        }
+
+        .stamina-fill {
+            background: linear-gradient(90deg, #1e3a8a, #3b82f6, #60a5fa);
+            transition: width 0.4s ease-out;
+            box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+        }
+
+        /* Ambient Fog and Screen Effects */
+        .vignette {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            box-shadow: inset 0 0 120px rgba(0,0,0,0.95);
+            z-index: 40;
+        }
+
+        .blood-splash {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            background: radial-gradient(circle, transparent 40%, rgba(136, 8, 8, 0.25) 100%);
+            opacity: 0.6;
+            z-index: 30;
+        }
+
+        @keyframes fogMove {
+            0% { transform: translateX(-10%) translateY(-5%); opacity: 0.2; }
+            50% { transform: translateX(10%) translateY(5%); opacity: 0.45; }
+            100% { transform: translateX(-10%) translateY(-5%); opacity: 0.2; }
+        }
+
+        .fog-layer {
+            position: fixed;
+            inset: -20%;
+            background: radial-gradient(circle, rgba(60,20,30,0.2) 0%, rgba(5,5,8,0.8) 80%);
+            animation: fogMove 20s ease-in-out infinite;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        /* D20 Dado 3D Animation */
+        .dice-3d {
+            width: 70px;
+            height: 70px;
+            background: radial-gradient(circle, #2d1212 0%, #0a0303 100%);
+            border: 2px solid #c5a059;
+            clip-path: polygon(50% 0%, 95% 25%, 95% 75%, 50% 100%, 5% 75%, 5% 25%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 20px rgba(197, 160, 89, 0.4);
+            transition: transform 0.1s;
+        }
+
+        .dice-rolling {
+            animation: rollDice3D 0.7s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        @keyframes rollDice3D {
+            0% { transform: rotate(0deg) scale(0.4); filter: brightness(2); }
+            30% { transform: rotate(360deg) scale(1.3); }
+            60% { transform: rotate(720deg) scale(0.9); }
+            100% { transform: rotate(1080deg) scale(1); filter: brightness(1); }
+        }
+
+        @keyframes shakeHard {
+            0%, 100% { transform: translate(0,0); }
+            20% { transform: translate(-10px, 8px) rotate(-3deg); }
+            40% { transform: translate(10px, -8px) rotate(3deg); }
+            60% { transform: translate(-8px, -4px) rotate(-1deg); }
+            80% { transform: translate(8px, 4px) rotate(1deg); }
+        }
+
+        .animate-shake { animation: shakeHard 0.45s ease-in-out; }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #050507; }
+        ::-webkit-scrollbar-thumb { background: #3a3227; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #c5a059; }
+
+        /* Cenários de Fundo Dinâmicos */
+        .bg-ruins { background: radial-gradient(circle, rgba(40,10,10,0.6) 0%, rgba(5,5,8,0.95) 100%), linear-gradient(180deg, #180505 0%, #050507 100%); }
+        .bg-catacombs { background: radial-gradient(circle, rgba(20,20,30,0.6) 0%, rgba(3,3,5,0.98) 100%); }
+        .bg-swamp { background: radial-gradient(circle, rgba(10,30,15,0.6) 0%, rgba(3,8,4,0.98) 100%); }
+        .bg-blood-tower { background: radial-gradient(circle, rgba(60,5,15,0.7) 0%, rgba(8,2,4,0.98) 100%); }
+        .bg-abyss { background: radial-gradient(circle, rgba(30,10,50,0.7) 0%, rgba(5,2,10,0.98) 100%); }
+        .bg-dragon-nest { background: radial-gradient(circle, rgba(70,15,5,0.8) 0%, rgba(10,2,2,0.98) 100%); }
+
+        /* Custom Visual Effects Canvas */
+        #fx-canvas {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 25;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between relative bg-black overflow-x-hidden">
+    
+    <div class="vignette"></div>
+    <div class="blood-splash"></div>
+    <div class="fog-layer"></div>
+
+    <!-- AUDIO CONTROLE E CABEÇALHO DA INTERFACE -->
+    <header class="relative z-30 py-3 px-4 border-b border-amber-900/40 bg-black/80 backdrop-blur-md flex justify-between items-center">
+        <div class="flex items-center gap-3">
+            <h1 class="text-xl md:text-2xl font-gothic text-red-600 tracking-wider drop-shadow-[0_2px_8px_rgba(255,0,0,0.6)]">
+                TORMENTA & SANGUE
+            </h1>
+            <span class="hidden sm:inline text-xs font-medieval text-amber-600/70 border-l border-amber-900/50 pl-3">
+                Dark Tactical RPG
+            </span>
+        </div>
+
+        <div class="flex items-center gap-3">
+            <!-- Selector de Dificuldade Global -->
+            <div class="flex items-center gap-1 bg-zinc-950 px-2 py-1 rounded border border-zinc-800 text-xs font-medieval">
+                <span class="text-zinc-500 hidden md:inline">Dificuldade:</span>
+                <select id="diff-select" onchange="setDifficulty(this.value)" class="bg-transparent text-amber-400 font-bold outline-none cursor-pointer">
+                    <option value="normal" class="bg-zinc-900 text-amber-400">Normal</option>
+                    <option value="hard" class="bg-zinc-900 text-red-400">Tormento</option>
+                    <option value="nightmare" class="bg-zinc-900 text-purple-400">Desespero Realista</option>
+                </select>
+            </div>
+
+            <!-- Botão Mute / Unmute Audio Synthesizer -->
+            <button id="btn-audio" onclick="toggleAudio()" class="px-3 py-1 rounded gothic-card border-amber-700/60 text-xs font-medieval text-amber-400 hover:text-amber-200 transition">
+                🔊 Áudio: ON
+            </button>
+        </div>
+    </header>
+
+    <!-- TELA 0: INTRODUÇÃO IMPACTANTE E MENU PRINCIPAL -->
+    <main id="screen-intro" class="relative z-20 flex-1 flex flex-col items-center justify-center px-4 py-8 text-center">
+        <div class="max-w-3xl w-full gothic-card gothic-card-gold p-8 md:p-12 rounded-xl relative overflow-hidden my-auto">
+            <div class="absolute -top-24 -left-24 w-48 h-48 bg-red-900/20 rounded-full blur-3xl pointer-events-none"></div>
+            <div class="absolute -bottom-24 -right-24 w-48 h-48 bg-amber-600/10 rounded-full blur-3xl pointer-events-none"></div>
+
+            <div class="text-xs font-medieval text-red-500 tracking-[0.3em] uppercase mb-2">Um Conto Macabro de Abandono</div>
+            <h2 class="text-4xl md:text-6xl font-gothic text-red-700 tracking-widest mb-4 drop-shadow-[0_4px_15px_rgba(255,0,0,0.5)]">
+                TORMENTA & SANGUE
+            </h2>
+            <p class="text-sm md:text-base font-medieval text-zinc-400 max-w-xl mx-auto mb-8 leading-relaxed">
+                Nas profundezas do abismo secular, onde os deuses morreram e os monstros governam as ruínas, sua carne é testada a cada decisão.
+            </p>
+
+            <div class="flex flex-col sm:flex-row gap-4 justify-center max-w-md mx-auto">
+                <button onclick="startStoryMode()" class="blood-btn px-8 py-4 rounded-lg font-gothic text-lg text-amber-200 tracking-wider uppercase font-bold flex-1">
+                    📖 Modo História
+                </button>
+                <button onclick="openPvPSetup()" class="gold-btn px-8 py-4 rounded-lg font-gothic text-lg tracking-wider uppercase font-bold flex-1">
+                    ⚔️ Duelo PvP
+                </button>
+            </div>
+
+            <div class="mt-6">
+                <button onclick="openAchievementsModal()" class="px-6 py-2 rounded gothic-card border-amber-600/50 text-amber-400 hover:text-amber-200 font-medieval text-sm flex items-center gap-2 mx-auto transition">
+                    🏆 Salão de Conquistas & Desbloqueios
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <!-- TELA 1: SELEÇÃO DE DUELO PVP E MAPAS -->
+    <div id="screen-pvp-setup" class="hidden relative z-20 flex-1 container mx-auto px-4 py-6 flex flex-col justify-center max-w-5xl">
+        <div class="gothic-card p-6 rounded-xl">
+            <h2 class="text-2xl md:text-3xl font-gothic text-amber-400 text-center mb-2">CONFIGURAÇÃO DE DUELO (1v1)</h2>
+            <p class="text-xs font-medieval text-zinc-400 text-center mb-6">Escolha a arena de combate e os combatentes das trevas.</p>
+
+            <!-- Seleção de Mapa -->
+            <div class="mb-6">
+                <label class="block text-xs font-medieval text-amber-500 uppercase tracking-widest mb-2 text-center">
+                    Cenário de Batalha:
+                </label>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <button onclick="selectPvPMap('ruins')" id="map-btn-ruins" class="p-3 rounded border border-amber-700 bg-amber-950/40 text-amber-300 font-medieval text-xs hover:border-amber-400 transition">
+                        🏰 Castelo de Sangue
+                    </button>
+                    <button onclick="selectPvPMap('catacombs')" id="map-btn-catacombs" class="p-3 rounded border border-zinc-700 bg-zinc-900/40 text-zinc-400 font-medieval text-xs hover:border-amber-400 transition">
+                        💀 Arena dos Malditos
+                    </button>
+                    <button onclick="selectPvPMap('swamp')" id="map-btn-swamp" class="p-3 rounded border border-zinc-700 bg-zinc-900/40 text-zinc-400 font-medieval text-xs hover:border-amber-400 transition">
+                        🌲 Floresta Negra
+                    </button>
+                    <button onclick="selectPvPMap('dragon-nest')" id="map-btn-dragon-nest" class="p-3 rounded border border-zinc-700 bg-zinc-900/40 text-zinc-400 font-medieval text-xs hover:border-amber-400 transition">
+                        🐉 Cume Dracônico
+                    </button>
+                </div>
+            </div>
+
+            <!-- Header de Etapa -->
+            <div class="text-center mb-4">
+                <span id="pvp-step-title" class="text-lg font-gothic text-red-500">
+                    JOGADOR 1: Escolha seu Condenado
+                </span>
+            </div>
+
+            <!-- Character Grid PvP -->
+            <div id="pvp-character-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+                <!-- Dinâmico -->
+            </div>
+
+            <div class="flex justify-between items-center">
+                <button onclick="returnToIntro()" class="px-6 py-2 rounded gothic-card text-zinc-400 font-medieval hover:text-white">
+                    ← Voltar ao Menu
+                </button>
+                <button id="btn-start-pvp" onclick="startPvPBattle()" disabled class="blood-btn px-8 py-3 rounded font-gothic text-amber-300 font-bold uppercase">
+                    Iniciar Duelo
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TELA 2: MODO HISTÓRIA (SELEÇÃO DE ATO E EQUIPE DO BOSS) -->
+    <div id="screen-story-select" class="hidden relative z-20 flex-1 container mx-auto px-4 py-6 flex flex-col justify-center max-w-5xl">
+        <div class="gothic-card p-6 rounded-xl">
+            <div class="text-center mb-6">
+                <span id="story-act-subtitle" class="text-xs font-medieval text-amber-500 tracking-widest uppercase block">
+                    Ato Actual da Jornada
+                </span>
+                <h2 id="story-act-title" class="text-3xl font-gothic text-red-600 mt-1">
+                    ATO 1: OS ARRABALDES ESQUECIDOS
+                </h2>
+                <p id="story-act-desc" class="text-xs font-medieval text-zinc-400 max-w-xl mx-auto mt-2">
+                    Infectados e cultistas vagam pelas ruínas incineradas. O desespero consome o ar.
+                </p>
+            </div>
+
+            <!-- PAINEL DE SELEÇÃO NORMAL (ATOS 1 A 5) -->
+            <div id="story-single-select" class="block">
+                <p class="text-center text-sm font-gothic text-amber-400 mb-4">Escolha o Heroí para Lutar este Ato:</p>
+                <div id="story-hero-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+                    <!-- Dinâmico -->
+                </div>
+            </div>
+
+            <!-- PAINEL DE SELEÇÃO DE EQUIPE (ATO 6 - RAID BOSS) -->
+            <div id="story-team-select" class="hidden">
+                <div class="bg-red-950/40 border border-red-800 p-4 rounded-lg text-center mb-6">
+                    <h3 class="text-lg font-gothic text-red-400 mb-1">🚨 AMEAÇA DRACÔNICA ANCIÃ!</h3>
+                    <p class="text-xs font-medieval text-zinc-300">
+                        Para enfrentar o Dragão Ancião no Ato Final, selecione uma <b class="text-amber-400">EQUIPE DE 3 HEROÍS</b>. 
+                        Quando um herói tombar, o próximo entrará na batalha!
+                    </p>
+                    <div class="flex justify-center gap-2 mt-3 font-gothic text-sm text-amber-300">
+                        <span>Squad Selected: <span id="team-count" class="text-red-500 font-bold">0</span>/3</span>
+                    </div>
+                </div>
+
+                <div id="story-team-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+                    <!-- Dinâmico -->
+                </div>
+            </div>
+
+            <div class="flex justify-between items-center pt-4 border-t border-zinc-800">
+                <button onclick="returnToIntro()" class="px-6 py-2 rounded gothic-card text-zinc-400 font-medieval hover:text-white">
+                    ← Voltar ao Menu
+                </button>
+                <button id="btn-start-story-act" onclick="startStoryBattle()" disabled class="blood-btn px-8 py-3 rounded font-gothic text-amber-300 font-bold uppercase">
+                    Entrar na Batalha
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TELA 3: ARENA DE COMBATE PRINCIPAL -->
+    <div id="screen-arena" class="hidden relative z-20 flex-1 container mx-auto px-2 md:px-4 py-4 flex flex-col justify-between max-w-6xl">
+        <canvas id="fx-canvas"></canvas>
+
+        <!-- HEADER DA BATALHA / SQUAD DE RESERVA -->
+        <div id="squad-bar" class="hidden mb-2 bg-black/70 border border-red-900/60 p-2 rounded flex justify-between items-center text-xs font-medieval">
+            <span class="text-amber-400 font-gothic">Reservas da Equipe:</span>
+            <div id="squad-list" class="flex gap-2">
+                <!-- Cards pequenos dos heróis reservas -->
+            </div>
+        </div>
+
+        <!-- PAINEL SUPERIOR: LUTADORES (P1 vs P2 / BOSS) -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 my-auto relative z-30">
+            
+            <!-- LUTADOR 1 (P1) -->
+            <div id="card-p1" class="gothic-card rounded-xl p-4 relative overflow-hidden transition-all duration-300">
+                <div class="flex gap-4 items-center">
+                    <div id="avatar-p1" class="w-20 h-20 md:w-24 md:h-24 rounded-lg border border-amber-600/60 bg-black/80 flex items-center justify-center p-2 shrink-0 shadow-lg relative">
+                        <!-- SVG Avatar -->
+                    </div>
+                    <div class="flex-1">
+                        <div class="flex justify-between items-baseline">
+                            <h3 id="name-p1" class="text-lg md:text-xl font-gothic text-amber-400">Nome P1</h3>
+                            <span id="form-p1" class="text-[10px] font-medieval text-red-400 uppercase tracking-widest"></span>
+                        </div>
+
+                        <!-- Barra de Vida -->
+                        <div class="mt-2">
+                            <div class="flex justify-between text-xs font-medieval mb-1">
+                                <span class="text-red-400">Vida (HP)</span>
+                                <span id="hp-text-p1" class="text-zinc-300">100/100</span>
+                            </div>
+                            <div class="bar-container h-3.5 rounded-full overflow-hidden">
+                                <div id="hp-bar-p1" class="hp-fill h-full w-full"></div>
+                            </div>
+                        </div>
+
+                        <!-- Barra de Estamina -->
+                        <div class="mt-2">
+                            <div class="flex justify-between text-xs font-medieval mb-1">
+                                <span class="text-blue-400">Estamina</span>
+                                <span id="sta-text-p1" class="text-zinc-300">100/100</span>
+                            </div>
+                            <div class="bar-container h-2.5 rounded-full overflow-hidden">
+                                <div id="sta-bar-p1" class="stamina-fill h-full w-full"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stats Rápidos P1 -->
+                <div class="grid grid-cols-4 gap-1 mt-3 text-center text-xs font-medieval bg-black/60 p-1.5 rounded-lg border border-zinc-800">
+                    <div><span class="text-zinc-500">Atq:</span> <span id="atk-p1" class="text-amber-200">0</span></div>
+                    <div><span class="text-zinc-500">Def:</span> <span id="def-p1" class="text-blue-200">0</span></div>
+                    <div><span class="text-zinc-500">Ini:</span> <span id="ini-p1" class="text-green-200">0</span></div>
+                    <div><span class="text-zinc-500">Crít:</span> <span id="crit-p1" class="text-red-300">0%</span></div>
+                </div>
+            </div>
+
+            <!-- LUTADOR 2 (P2 / INIMIGO / BOSS) -->
+            <div id="card-p2" class="gothic-card rounded-xl p-4 relative overflow-hidden transition-all duration-300">
+                <div class="flex gap-4 items-center">
+                    <div id="avatar-p2" class="w-20 h-20 md:w-24 md:h-24 rounded-lg border border-red-700/60 bg-black/80 flex items-center justify-center p-2 shrink-0 shadow-lg relative">
+                        <!-- SVG Avatar -->
+                    </div>
+                    <div class="flex-1">
+                        <div class="flex justify-between items-baseline">
+                            <h3 id="name-p2" class="text-lg md:text-xl font-gothic text-red-400">Inimigo</h3>
+                            <span id="form-p2" class="text-[10px] font-medieval text-red-500 uppercase tracking-widest"></span>
+                        </div>
+
+                        <!-- Barra de Vida -->
+                        <div class="mt-2">
+                            <div class="flex justify-between text-xs font-medieval mb-1">
+                                <span class="text-red-400">Vida (HP)</span>
+                                <span id="hp-text-p2" class="text-zinc-300">100/100</span>
+                            </div>
+                            <div class="bar-container h-3.5 rounded-full overflow-hidden">
+                                <div id="hp-bar-p2" class="hp-fill h-full w-full"></div>
+                            </div>
+                        </div>
+
+                        <!-- Barra de Estamina -->
+                        <div class="mt-2">
+                            <div class="flex justify-between text-xs font-medieval mb-1">
+                                <span class="text-blue-400">Estamina</span>
+                                <span id="sta-text-p2" class="text-zinc-300">100/100</span>
+                            </div>
+                            <div class="bar-container h-2.5 rounded-full overflow-hidden">
+                                <div id="sta-bar-p2" class="stamina-fill h-full w-full"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stats Rápidos P2 -->
+                <div class="grid grid-cols-4 gap-1 mt-3 text-center text-xs font-medieval bg-black/60 p-1.5 rounded-lg border border-zinc-800">
+                    <div><span class="text-zinc-500">Atq:</span> <span id="atk-p2" class="text-amber-200">0</span></div>
+                    <div><span class="text-zinc-500">Def:</span> <span id="def-p2" class="text-blue-200">0</span></div>
+                    <div><span class="text-zinc-500">Ini:</span> <span id="ini-p2" class="text-green-200">0</span></div>
+                    <div><span class="text-zinc-500">Crít:</span> <span id="crit-p2" class="text-red-300">0%</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PAINEL CENTRAL: DADO D20 3D E DIÁRIO DE COMBATE -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 my-4 relative z-30">
+            
+            <!-- CONTROLLER DADO D20 3D -->
+            <div class="gothic-card rounded-xl p-4 flex flex-col items-center justify-center min-h-[140px] text-center">
+                <span class="text-[10px] font-medieval text-amber-500 uppercase tracking-widest mb-1">Rolagem de D20</span>
+                <div id="dice-container" class="dice-3d my-1">
+                    <span id="dice-value" class="text-2xl font-bold font-gothic text-amber-400">--</span>
+                </div>
+                <span id="dice-result-text" class="text-xs font-medieval text-zinc-400 h-4 mt-1">Aguardando decisão...</span>
+            </div>
+
+            <!-- LOG DE BATALHA -->
+            <div class="lg:col-span-2 gothic-card rounded-xl p-3 flex flex-col h-40">
+                <div class="text-xs font-medieval text-amber-500 uppercase tracking-widest pb-1 border-b border-zinc-800 mb-2 flex justify-between">
+                    <span>📜 Diário de Tormentos</span>
+                    <span id="turn-indicator" class="text-red-400">Turno 1</span>
+                </div>
+                <div id="combat-log" class="flex-1 overflow-y-auto space-y-1 text-xs font-medieval pr-1">
+                    <p class="text-zinc-500 italic">O ar está pesado com cheiro de enxofre e sangue...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- PAINEL INFERIOR: PAINEL DE AÇÕES DO JOGADOR ATIVO -->
+        <div class="gothic-card rounded-xl p-4 relative z-30">
+            <div class="flex justify-between items-center mb-3">
+                <h4 id="active-player-banner" class="text-sm font-gothic text-amber-400 tracking-wider">
+                    TURNO DE: <span id="active-player-name" class="text-red-500">...</span>
+                </h4>
+                <span id="active-player-status" class="text-xs font-medieval text-zinc-400">Selecione uma habilidade</span>
+            </div>
+
+            <!-- BOTOES DE HABILIDADES DO PERSONAGEM ATIVO -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+                <button id="btn-skill-0" onclick="executeSkill(0)" class="blood-btn p-3 rounded-lg text-left flex flex-col justify-between h-24">
+                    <div>
+                        <div class="font-bold text-sm text-amber-300 font-gothic flex justify-between">
+                            <span id="skill-0-name">Ataque Bás.</span>
+                            <span id="skill-0-cost" class="text-blue-400 text-xs">5 STA</span>
+                        </div>
+                        <p id="skill-0-desc" class="text-[11px] font-medieval text-zinc-400 mt-1 line-clamp-2">Lança um ataque físico direto.</p>
+                    </div>
+                    <span class="text-[10px] text-zinc-500 text-right">Físico</span>
+                </button>
+
+                <button id="btn-skill-1" onclick="executeSkill(1)" class="blood-btn p-3 rounded-lg text-left flex flex-col justify-between h-24">
+                    <div>
+                        <div class="font-bold text-sm text-amber-300 font-gothic flex justify-between">
+                            <span id="skill-1-name">Ataque Alt.</span>
+                            <span id="skill-1-cost" class="text-blue-400 text-xs">20 STA</span>
+                        </div>
+                        <p id="skill-1-desc" class="text-[11px] font-medieval text-zinc-400 mt-1 line-clamp-2">Habilidade tática ou mágica.</p>
+                    </div>
+                    <span class="text-[10px] text-zinc-500 text-right">Especial</span>
+                </button>
+
+                <button id="btn-skill-2" onclick="executeSkill(2)" class="blood-btn p-3 rounded-lg text-left flex flex-col justify-between h-24">
+                    <div>
+                        <div class="font-bold text-sm text-amber-300 font-gothic flex justify-between">
+                            <span id="skill-2-name">Poder Supremo</span>
+                            <span id="skill-2-cost" class="text-blue-400 text-xs">40 STA</span>
+                        </div>
+                        <p id="skill-2-desc" class="text-[11px] font-medieval text-zinc-400 mt-1 line-clamp-2">Golpe devastador de classe.</p>
+                    </div>
+                    <span class="text-[10px] text-zinc-500 text-right">Devastador</span>
+                </button>
+
+                <!-- AÇÃO DE DESCANSAR -->
+                <button id="btn-skill-special" onclick="executeRestAction()" class="bg-zinc-900 border border-amber-700/50 hover:bg-zinc-800 p-3 rounded-lg text-left flex flex-col justify-between h-24 transition">
+                    <div>
+                        <div class="font-bold text-sm text-amber-300 font-gothic flex justify-between">
+                            <span>Meditar & Respirar</span>
+                            <span class="text-green-400 text-xs">+35 STA</span>
+                        </div>
+                        <p class="text-[11px] font-medieval text-zinc-400 mt-1">Recupera o fôlego e recompõe a estamina.</p>
+                    </div>
+                    <span class="text-[10px] text-zinc-500 text-right">Suporte</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE CONQUISTAS E SALÃO DE FEITOS -->
+    <div id="modal-achievements" class="hidden fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="gothic-card gothic-card-gold rounded-xl max-w-lg w-full p-6">
+            <div class="flex justify-between items-center border-b border-amber-800/60 pb-3 mb-4">
+                <h3 class="text-2xl font-gothic text-amber-400">🏆 Salão de Conquistas</h3>
+                <button onclick="closeAchievementsModal()" class="text-zinc-500 hover:text-amber-400 font-bold">✕</button>
+            </div>
+
+            <div class="space-y-4">
+                <div id="achievement-card-dragon" class="p-4 rounded-lg border border-zinc-800 bg-zinc-950 flex gap-4 items-center transition">
+                    <div class="w-14 h-14 rounded border border-amber-600/50 bg-black flex items-center justify-center text-2xl shrink-0">
+                        🐉
+                    </div>
+                    <div class="flex-1">
+                        <div class="flex justify-between">
+                            <h4 class="font-gothic text-sm text-amber-300">O Matador de Dragões</h4>
+                            <span id="achieve-status" class="text-[10px] font-medieval uppercase px-2 py-0.5 rounded bg-zinc-800 text-zinc-500">Bloqueado</span>
+                        </div>
+                        <p class="text-xs font-medieval text-zinc-400 mt-1">
+                            Derrote o Dragão Ancião no Ato 6 do Modo História.
+                        </p>
+                        <div class="mt-2 text-[11px] text-amber-500/80 font-medieval">
+                            🎁 Recompensas: Desbloqueia o <b>Dragão Ancião</b> (Personagem Roubado) e a <b>Princesa Ascendida (Rainha do Sangue)</b>.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-6 text-center">
+                <button onclick="closeAchievementsModal()" class="gold-btn px-8 py-2 rounded font-gothic text-sm">
+                    Fechar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE FIM DE BATALHA / VITORIA E DERROTA -->
+    <div id="modal-gameover" class="hidden fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="gothic-card gothic-card-gold rounded-xl max-w-md w-full p-6 text-center">
+            <h2 id="modal-title" class="text-3xl font-gothic text-red-600 mb-2">VITÓRIA!</h2>
+            <p id="modal-message" class="text-amber-200 font-medieval text-sm mb-6">O sangue encharca o solo estéril.</p>
+            <div class="flex justify-center gap-4">
+                <button onclick="returnToIntro()" class="blood-btn px-6 py-2 rounded font-gothic text-sm">
+                    Menu Principal
+                </button>
+                <button id="btn-modal-next" onclick="handleModalNext()" class="gold-btn px-6 py-2 rounded font-gothic text-sm">
+                    Continuar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <footer class="relative z-30 text-center py-2 text-[10px] text-zinc-600 font-medieval border-t border-zinc-900/60 bg-black/80">
+        Tormenta & Sangue • Dark Fantasy Tactical RPG
+    </footer>
+
+    <!-- LOGICA EM JAVASCRIPT -->
+    <script>
+        /* ==========================================================================
+           1. AUDIOS SINTÉTICOS (WEB AUDIO API - Zero dependências externas)
+           ========================================================================== */
+        let audioCtx = null;
+        let audioEnabled = true;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        function toggleAudio() {
+            audioEnabled = !audioEnabled;
+            document.getElementById('btn-audio').textContent = audioEnabled ? "🔊 Áudio: ON" : "🔇 Áudio: OFF";
+        }
+
+        function playSound(type) {
+            if (!audioEnabled) return;
+            initAudio();
+            if (!audioCtx) return;
+
+            const now = audioCtx.currentTime;
+
+            if (type === 'slash') {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(400, now);
+                osc.frequency.exponentialRampToValueAtTime(80, now + 0.15);
+                gain.gain.setValueAtTime(0.3, now);
+                gain.gain.linearRampToValueAtTime(0.01, now + 0.15);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start(now);
+                osc.stop(now + 0.15);
+            } else if (type === 'fire') {
+                const bufferSize = audioCtx.sampleRate * 0.3;
+                const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+                const noise = audioCtx.createBufferSource();
+                noise.buffer = buffer;
+                const filter = audioCtx.createBiquadFilter();
+                filter.type = 'lowpass';
+                filter.frequency.setValueAtTime(800, now);
+                filter.frequency.linearRampToValueAtTime(100, now + 0.3);
+                const gain = audioCtx.createGain();
+                gain.gain.setValueAtTime(0.4, now);
+                gain.gain.linearRampToValueAtTime(0.01, now + 0.3);
+                noise.connect(filter);
+                filter.connect(gain);
+                gain.connect(audioCtx.destination);
+                noise.start(now);
+            } else if (type === 'dice') {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(150, now);
+                osc.frequency.exponentialRampToValueAtTime(300, now + 0.1);
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.linearRampToValueAtTime(0.01, now + 0.1);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start(now);
+                osc.stop(now + 0.1);
+            }
+        }
+
+        /* ==========================================================================
+           2. CANVAS VISUAL EFFECTS (Partículas de Feitiços e Ataques)
+           ========================================================================== */
+        const canvas = document.getElementById('fx-canvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+
+        function resizeCanvas() {
+            canvas.width = canvas.parentElement.clientWidth;
+            canvas.height = canvas.parentElement.clientHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        function createParticles(x, y, color, count = 25) {
+            for (let i = 0; i < count; i++) {
+                particles.push({
+                    x: x,
+                    y: y,
+                    vx: (Math.random() - 0.5) * 12,
+                    vy: (Math.random() - 0.5) * 12,
+                    radius: Math.random() * 4 + 2,
+                    color: color,
+                    alpha: 1,
+                    decay: Math.random() * 0.03 + 0.015
+                });
+            }
+        }
+
+        function renderFX() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.alpha -= p.decay;
+
+                if (p.alpha <= 0) {
+                    particles.splice(i, 1);
+                    continue;
+                }
+
+                ctx.save();
+                ctx.globalAlpha = p.alpha;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                ctx.fillStyle = p.color;
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = p.color;
+                ctx.fill();
+                ctx.restore();
+            }
+            requestAnimationFrame(renderFX);
+        }
+        renderFX();
+
+        function triggerAttackFX(color = '#ef4444') {
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            createParticles(centerX, centerY, color, 45);
+        }
+
+        /* ==========================================================================
+           3. SVGs ILUSTRATIVOS DE ALTA QUALIDADE
+           ========================================================================== */
+        const SVGS = {
+            princesa: `<svg viewBox="0 0 100 100" class="w-full h-full stroke-purple-500 fill-purple-950/40" stroke-width="2"><path d="M50 15 L60 30 L80 35 L65 50 L70 75 L50 60 L30 75 L35 50 L20 35 L40 30 Z"/><polygon points="40,15 50,5 60,15" fill="#a855f7"/><circle cx="50" cy="40" r="10" fill="#3b0764"/></svg>`,
+            princesa_ascendida: `<svg viewBox="0 0 100 100" class="w-full h-full stroke-amber-400 fill-red-950/60" stroke-width="2.5"><path d="M50 10 L65 28 L90 32 L70 52 L78 80 L50 62 L22 80 L30 52 L10 32 L35 28 Z"/><polygon points="35,12 50,2 65,12" fill="#eab308"/><circle cx="50" cy="38" r="12" fill="#991b1b"/><path d="M20 50 Q50 20 80 50" fill="none" stroke="#ef4444" stroke-width="3"/></svg>`,
+            cavaleiro: `<svg viewBox="0 0 100 100" class="w-full h-full stroke-amber-500 fill-zinc-900" stroke-width="2"><rect x="30" y="20" width="40" height="50" rx="5"/><path d="M50 10 L65 20 L35 20 Z" fill="#d97706"/><line x1="50" y1="25" x2="50" y2="65" stroke="#fbbf24"/><line x1="35" y1="40" x2="65" y2="40" stroke="#fbbf24"/><path d="M25 70 L75 70 L50 90 Z" fill="#451a03"/></svg>`,
+            curandeiro: `<svg viewBox="0 0 100 100" class="w-full h-full stroke-emerald-500 fill-emerald-950/40" stroke-width="2"><circle cx="50" cy="35" r="20"/><path d="M50 15 L50 55 M30 35 L70 35" stroke="#10b981" stroke-width="4"/><path d="M25 60 C25 60 50 90 50 90 C50 90 75 60 75 60 Z"/></svg>`,
+            mago: `<svg viewBox="0 0 100 100" class="w-full h-full stroke-blue-500 fill-blue-950/40" stroke-width="2"><path d="M50 10 L80 80 L20 80 Z"/><circle cx="50" cy="50" r="12" fill="#1d4ed8"/><path d="M50 5 L50 20 M20 80 L10 95 M80 80 L90 95" stroke="#60a5fa"/></svg>`,
+            fazendeiro: `<svg viewBox="0 0 100 100" class="w-full h-full stroke-amber-700 fill-yellow-950/30" stroke-width="2"><path d="M20 30 Q50 10 80 30 L70 85 L30 85 Z"/><path d="M15 40 Q50 20 85 40" fill="none" stroke="#d97706" stroke-width="3"/><line x1="50" y1="45" x2="50" y2="85" stroke="#78350f" stroke-width="4"/></svg>`,
+            dragao_humano: `<svg viewBox="0 0 100 100" class="w-full h-full stroke-red-600 fill-black" stroke-width="2"><circle cx="50" cy="40" r="18"/><path d="M30 30 L50 5 L70 30" fill="#7f1d1d"/><circle cx="43" cy="38" r="3" fill="#ef4444"/><circle cx="57" cy="38" r="3" fill="#ef4444"/><path d="M30 60 L70 60 L50 95 Z" fill="#450a0a"/></svg>`,
+            dragao_boss: `<svg viewBox="0 0 100 100" class="w-full h-full stroke-red-500 fill-red-950" stroke-width="3"><path d="M50 5 L75 35 L95 25 L75 60 L90 90 L50 70 L10 90 L25 60 L5 25 L25 35 Z"/><circle cx="50" cy="45" r="12" fill="#dc2626"/><path d="M35 15 Q50 -5 65 15" fill="none" stroke="#f59e0b" stroke-width="4"/></svg>`
+        };
+
+        /* ==========================================================================
+           4. BASE DE DADOS DOS PERSONAGENS E ATRIBUTOS (INCLUINDO ROUBADOS & UPGRADES)
+           ========================================================================== */
+        const CHARACTERS_DATA = {
+            princesa: {
+                id: 'princesa',
+                name: 'Princesa Caída',
+                title: 'Aflita pelo Pacto das Sombras',
+                svg: SVGS.princesa,
+                stats: { hpMax: 105, attack: 22, defense: 8, initiative: 16, critChance: 20, staminaMax: 100 },
+                skills: [
+                    { name: "Adaga Venenosa", cost: 10, desc: "Corte rápido que infecta o sangue do alvo.", multiplier: 1.1, effect: "poison", fxColor: "#a855f7" },
+                    { name: "Maldição Sombria", cost: 25, desc: "Aflige a mente, drenando 20 de estamina inimiga.", multiplier: 1.3, effect: "drain_sta", fxColor: "#3b0764" },
+                    { name: "Regeneração Sombria", cost: 35, desc: "Rituais proibidos que curam 45 de HP.", heal: 45, type: "heal", fxColor: "#10b981" }
+                ]
+            },
+            princesa_ascendida: {
+                id: 'princesa_ascendida',
+                name: 'Rainha do Sangue',
+                title: 'Princesa Ascendida pelas Sombras (UPGRADE)',
+                svg: SVGS.princesa_ascendida,
+                isUnlocked: false,
+                stats: { hpMax: 210, attack: 35, defense: 18, initiative: 22, critChance: 35, staminaMax: 130 },
+                skills: [
+                    { name: "Lâmina Vampírica", cost: 10, desc: "Corte devastating que rouba 50% do dano em Vida.", multiplier: 1.4, lifesteal: 0.5, fxColor: "#ef4444" },
+                    { name: "Chuva de Sangue Tormentoso", cost: 30, desc: "Massivo dano sombrio com alta chance de crítico.", multiplier: 2.0, bonusCrit: 25, fxColor: "#991b1b" },
+                    { name: "Ascensão Imortal", cost: 40, desc: "Cura 80 de Vida e aumenta muito a Defesa.", heal: 80, buffDef: 8, type: "heal", fxColor: "#eab308" }
+                ]
+            },
+            cavaleiro: {
+                id: 'cavaleiro',
+                name: 'Cavaleiro Corrompido',
+                title: 'Baluarte de Ferro e Sangue',
+                svg: SVGS.cavaleiro,
+                stats: { hpMax: 165, attack: 17, defense: 16, initiative: 8, critChance: 8, staminaMax: 100 },
+                skills: [
+                    { name: "Golpe de Lâmina Negra", cost: 10, desc: "Ataque direto e pesado de espada.", multiplier: 1.2, fxColor: "#f59e0b" },
+                    { name: "Investida Brutal", cost: 20, desc: "Atropela o oponente reduzindo a iniciativa dele.", multiplier: 1.4, effect: "debuff_ini", fxColor: "#d97706" },
+                    { name: "Postura Inabalável", cost: 30, desc: "Fortalecimento total que aumenta a defesa e desfere um golpe demolidor.", multiplier: 1.8, buffDef: 6, fxColor: "#fbbf24" }
+                ]
+            },
+            curandeiro: {
+                id: 'curandeiro',
+                name: 'Curandeiro de Pragas',
+                title: 'Mestre dos Ritualismos Macabros',
+                svg: SVGS.curandeiro,
+                stats: { hpMax: 115, attack: 15, defense: 10, initiative: 14, critChance: 12, staminaMax: 110 },
+                skills: [
+                    { name: "Scalpelo Infectado", cost: 10, desc: "Corte cirúrgico que causa veneno grave.", multiplier: 1.0, effect: "poison", fxColor: "#10b981" },
+                    { name: "Cura Milagrosa Profunda", cost: 30, desc: "Restaura 55 de HP instantaneamente.", heal: 55, type: "heal", fxColor: "#34d399" },
+                    { name: "Névoa Pestilenta Sacrificial", cost: 40, desc: "Explosão de peste que causa alto dano ao custo de 15 HP próprio.", multiplier: 2.2, selfDamage: 15, fxColor: "#059669" }
+                ]
+            },
+            mago: {
+                id: 'mago',
+                name: 'Mago Ritualista',
+                title: 'Canalizador do Abismo',
+                svg: SVGS.mago,
+                stats: { hpMax: 95, attack: 26, defense: 6, initiative: 13, critChance: 22, staminaMax: 120 },
+                skills: [
+                    { name: "Míssil Arcano Profano", cost: 15, desc: "Dispara energia mística pura.", multiplier: 1.3, fxColor: "#3b82f6" },
+                    { name: "Dreno de Alma", cost: 25, desc: "Rouba a vitalidade do oponente para curar a sua.", multiplier: 1.5, lifesteal: 0.6, fxColor: "#1d4ed8" },
+                    { name: "Meteoro do Abismo", cost: 50, desc: "Invocação devastadora de destruição em massa.", multiplier: 2.6, fxColor: "#60a5fa" }
+                ]
+            },
+            fazendeiro: {
+                id: 'fazendeiro',
+                name: 'Fazendeiro Obstinado',
+                title: 'Sobrevivente da Terra Estéril',
+                svg: SVGS.fazendeiro,
+                stats: { hpMax: 135, attack: 18, defense: 11, initiative: 11, critChance: 15, staminaMax: 100 },
+                skills: [
+                    { name: "Golpe de Foice", cost: 10, desc: "Ataque largo com alta chance de crítico.", multiplier: 1.2, bonusCrit: 15, fxColor: "#d97706" },
+                    { name: "Armadilha de Urso", cost: 25, desc: "Causa sangramento grave e trava o inimigo.", multiplier: 1.3, effect: "bleed", fxColor: "#78350f" },
+                    { name: "Fúria do Moribundo", cost: 35, desc: "Causa dano colossal proporcional ao HP perdido.", multiplier: 1.7, scalingMissingHp: true, fxColor: "#b45309" }
+                ]
+            },
+            dragao: {
+                id: 'dragao',
+                name: 'Dragão Ancião',
+                title: 'O Flagelo Imortal (ROUBADO)',
+                svg: SVGS.dragao_humano,
+                isUnlocked: false, // Requer conquista "O Matador de Dragões"
+                isTransformable: true,
+                currentForm: 'humana',
+                stats: {
+                    humana: { hpMax: 180, attack: 30, defense: 15, initiative: 20, critChance: 25, staminaMax: 120 },
+                    dragao: { hpMax: 350, attack: 45, defense: 25, initiative: 12, critChance: 20, staminaMax: 150 }
+                },
+                skills: {
+                    humana: [
+                        { name: "Corte Triplo de Lâminas", cost: 15, desc: "Três cortes brutais contínuos.", multiplier: 1.5, fxColor: "#ef4444" },
+                        { name: "Tornado Sangrento", cost: 25, desc: "Lança lâminas de vento cortante que reduzem a defesa.", multiplier: 1.8, effect: "debuff_def", fxColor: "#991b1b" },
+                        { name: "Assumir Forma Dracônica GIGANTE", cost: 30, desc: "Transforma-se no Dragão Ancião Gigante, atingindo 350 HP!", isTransform: true }
+                    ],
+                    dragao: [
+                        { name: "Garras de Dragão Devastadoras", cost: 15, desc: "Patada esmagadora de garra dracônica.", multiplier: 1.6, fxColor: "#dc2626" },
+                        { name: "Rabada Destruidora de Ossos", cost: 30, desc: "Varredura colossal que paralisa e tira a iniciativa.", multiplier: 2.0, effect: "debuff_ini", fxColor: "#7f1d1d" },
+                        { name: "Baforada de Fogo do Inferno", cost: 50, desc: "Chamas apocalípticas que obliteram e causam sangramento contínuo.", multiplier: 3.0, effect: "bleed", fxColor: "#f59e0b" }
+                    ]
+                }
+            }
+        };
+
+        /* ==========================================================================
+           5. BASE DE DADOS DOS ATOS DO MODO HISTÓRIA
+           ========================================================================== */
+        const STORY_ACTS = [
+            { act: 1, title: "ATO 1: OS ARRABALDES ESQUECIDOS", bg: "bg-ruins", desc: "Ruínas incineradas tomadas por infectados enlouquecidos.", bossName: "Cultista Infestado", bossId: "fazendeiro" },
+            { act: 2, title: "ATO 2: AS CATACUMBAS DO DESESPERO", bg: "bg-catacombs", desc: "Dungeons escuras repletas de pilhas de ossos e velas profanas.", bossName: "Guardião Caído", bossId: "cavaleiro" },
+            { act: 3, title: "ATO 3: O PÂNTANO DA PUTREFAÇÃO", bg: "bg-swamp", desc: "Lodo tóxico e vegetação retorcida que asfixia a vida.", bossName: "Feiticeiro do Pântano", bossId: "curandeiro" },
+            { act: 4, title: "ATO 4: A TORRE DO RITUAL DE SANGUE", bg: "bg-blood-tower", desc: "Santuário de sacrifício banhado em runas escarlates.", bossName: "Arquimago Ritualista", bossId: "mago" },
+            { act: 5, title: "ATO 5: O PORTAL DO ABISMO", bg: "bg-abyss", desc: "Dimensão paralela de tempestades de almas atormentadas.", bossName: "Sombra da Princesa", bossId: "princesa" },
+            { act: 6, title: "ATO 6: O NINHO DO DRAGÃO ANCIÃO (BOSS FINAL)", bg: "bg-dragon-nest", desc: "O cume do vulcão negro. A batalha definitiva exige um Squad de 3 Heróis!", bossName: "Dragão Ancião Boss", bossId: "dragao", isFinalBoss: true }
+        ];
+
+        /* ==========================================================================
+           6. ESTADO GLOBAL DO JOGO
+           ========================================================================== */
+        let gameState = {
+            mode: 'intro', // 'intro', 'pvp', 'story'
+            difficulty: 'normal', // 'normal', 'hard', 'nightmare'
+            currentActIndex: 0,
+            selectedPvPMap: 'ruins',
+            achievementUnlocked: false,
+            
+            // Controle de Seleção PvP
+            pvpStep: 1,
+            pvpP1Id: null,
+            pvpP2Id: null,
+
+            // Controle do Modo História
+            storyHeroId: null,
+            storySquadIds: [],
+
+            // Estado Ativo da Batalha
+            p1: null,
+            p2: null,
+            p1Squad: [], // Reservas no Modo Raid Boss (Ato 6)
+            activePlayer: 'p1',
+            turnCount: 1,
+            isProcessingTurn: false
+        };
+
+        /* ==========================================================================
+           7. SISTEMA DE SALVAMENTO DE CONQUISTAS (LOCALSTORAGE)
+           ========================================================================== */
+        function loadAchievementState() {
+            const saved = localStorage.getItem('tormenta_dragon_killed');
+            if (saved === 'true') {
+                unlockDragonAndPrincessUpgrade(false);
+            }
+        }
+
+        function unlockDragonAndPrincessUpgrade(save = true) {
+            gameState.achievementUnlocked = true;
+            CHARACTERS_DATA.dragao.isUnlocked = true;
+            CHARACTERS_DATA.princesa_ascendida.isUnlocked = true;
+
+            const badge = document.getElementById('achieve-status');
+            if (badge) {
+                badge.textContent = "DESBLOQUEADO";
+                badge.className = "text-[10px] font-medieval uppercase px-2 py-0.5 rounded bg-amber-500 text-black font-bold";
+            }
+
+            if (save) {
+                localStorage.setItem('tormenta_dragon_killed', 'true');
+            }
+        }
+
+        function openAchievementsModal() {
+            document.getElementById('modal-achievements').classList.remove('hidden');
+        }
+
+        function closeAchievementsModal() {
+            document.getElementById('modal-achievements').classList.add('hidden');
+        }
+
+        function setDifficulty(val) {
+            gameState.difficulty = val;
+        }
+
+        /* ==========================================================================
+           8. NAVEGAÇÃO DE TELAS E SELEÇÃO DE MODOS
+           ========================================================================== */
+        function returnToIntro() {
+            document.getElementById('screen-intro').classList.remove('hidden');
+            document.getElementById('screen-pvp-setup').classList.add('hidden');
+            document.getElementById('screen-story-select').classList.add('hidden');
+            document.getElementById('screen-arena').classList.add('hidden');
+            document.getElementById('modal-gameover').classList.add('hidden');
+        }
+
+        /* --- MODO PVP DUELO --- */
+        function openPvPSetup() {
+            gameState.mode = 'pvp';
+            gameState.pvpStep = 1;
+            gameState.pvpP1Id = null;
+            gameState.pvpP2Id = null;
+
+            document.getElementById('screen-intro').classList.add('hidden');
+            document.getElementById('screen-pvp-setup').classList.remove('hidden');
+            document.getElementById('pvp-step-title').textContent = "JOGADOR 1: Escolha seu Condenado";
+            document.getElementById('btn-start-pvp').disabled = true;
+
+            renderPvPGrid();
+        }
+
+        function selectPvPMap(mapId) {
+            gameState.selectedPvPMap = mapId;
+            ['ruins', 'catacombs', 'swamp', 'dragon-nest'].forEach(m => {
+                const btn = document.getElementById(`map-btn-${m}`);
+                if (btn) {
+                    btn.className = m === mapId ? 
+                        "p-3 rounded border border-amber-500 bg-amber-950/60 text-amber-300 font-medieval text-xs font-bold transition shadow-lg" : 
+                        "p-3 rounded border border-zinc-800 bg-zinc-900/40 text-zinc-500 font-medieval text-xs hover:border-amber-400 transition";
+                }
+            });
+        }
+
+        function renderPvPGrid() {
+            const grid = document.getElementById('pvp-character-grid');
+            grid.innerHTML = '';
+
+            Object.values(CHARACTERS_DATA).forEach(char => {
+                if (char.isUnlocked === false) return; // Oculta se bloqueado
+
+                const isP1 = gameState.pvpP1Id === char.id;
+                const isP2 = gameState.pvpP2Id === char.id;
+
+                let border = "gothic-card hover:border-amber-500/60 cursor-pointer";
+                if (isP1) border = "gothic-card gothic-card-gold border-amber-400 bg-amber-950/30";
+                if (isP2) border = "gothic-card border-red-600 bg-red-950/30";
+
+                const baseStats = char.isTransformable ? char.stats.humana : char.stats;
+
+                const card = document.createElement('div');
+                card.className = `${border} p-4 rounded-xl flex flex-col justify-between transition-all hover:-translate-y-1`;
+                card.onclick = () => selectPvPCharacter(char.id);
+
+                card.innerHTML = `
+                    <div>
+                        <div class="flex items-center gap-3 mb-3">
+                            <div class="w-12 h-12 rounded-lg border border-amber-700/50 bg-black p-1 flex items-center justify-center">
+                                ${char.svg}
+                            </div>
+                            <div>
+                                <h4 class="font-gothic text-amber-400 font-bold text-sm">${char.name}</h4>
+                                <p class="text-[10px] font-medieval text-zinc-400">${char.title}</p>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-1 text-[10px] font-medieval bg-black/50 p-2 rounded border border-zinc-800 mb-2">
+                            <span>HP: <b class="text-red-400">${baseStats.hpMax}</b></span>
+                            <span>Atq: <b class="text-amber-300">${baseStats.attack}</b></span>
+                            <span>Def: <b class="text-blue-300">${baseStats.defense}</b></span>
+                            <span>Ini: <b class="text-green-300">${baseStats.initiative}</b></span>
+                        </div>
+                    </div>
+
+                    <div class="text-[10px] font-medieval text-right font-bold">
+                        ${isP1 ? '<span class="text-amber-400">JOGADOR 1</span>' : ''}
+                        ${isP2 ? '<span class="text-red-500">JOGADOR 2</span>' : ''}
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function selectPvPCharacter(charId) {
+            if (gameState.pvpStep === 1) {
+                gameState.pvpP1Id = charId;
+                gameState.pvpStep = 2;
+                document.getElementById('pvp-step-title').textContent = "JOGADOR 2: Escolha seu Condenado";
+            } else if (gameState.pvpStep === 2) {
+                if (charId === gameState.pvpP1Id) return;
+                gameState.pvpP2Id = charId;
+                document.getElementById('btn-start-pvp').disabled = false;
+            }
+            renderPvPGrid();
+        }
+
+        function startPvPBattle() {
+            gameState.p1 = createFighterInstance(gameState.pvpP1Id, true);
+            gameState.p2 = createFighterInstance(gameState.pvpP2Id, false);
+            gameState.p1Squad = [];
+
+            setupBattleArena(gameState.selectedPvPMap);
+        }
+
+        /* --- MODO HISTÓRIA EXPANDIDO --- */
+        function startStoryMode() {
+            gameState.mode = 'story';
+            gameState.currentActIndex = 0;
+            openStoryActSetup();
+        }
+
+        function openStoryActSetup() {
+            const act = STORY_ACTS[gameState.currentActIndex];
+
+            document.getElementById('screen-intro').classList.add('hidden');
+            document.getElementById('screen-story-select').classList.remove('hidden');
+            document.getElementById('screen-arena').classList.add('hidden');
+
+            document.getElementById('story-act-subtitle').textContent = `Progresso do Modo História (Ato ${act.act}/6)`;
+            document.getElementById('story-act-title').textContent = act.title;
+            document.getElementById('story-act-desc').textContent = act.desc;
+
+            if (act.isFinalBoss) {
+                document.getElementById('story-single-select').classList.add('hidden');
+                document.getElementById('story-team-select').classList.remove('hidden');
+                gameState.storySquadIds = [];
+                renderStoryTeamGrid();
+            } else {
+                document.getElementById('story-single-select').classList.remove('hidden');
+                document.getElementById('story-team-select').classList.add('hidden');
+                gameState.storyHeroId = null;
+                renderStorySingleGrid();
+            }
+
+            document.getElementById('btn-start-story-act').disabled = true;
+        }
+
+        function renderStorySingleGrid() {
+            const grid = document.getElementById('story-hero-grid');
+            grid.innerHTML = '';
+
+            Object.values(CHARACTERS_DATA).forEach(char => {
+                if (char.isUnlocked === false) return;
+
+                const isSelected = gameState.storyHeroId === char.id;
+                const border = isSelected ? 
+                    "gothic-card gothic-card-gold border-amber-400 bg-amber-950/30" : 
+                    "gothic-card hover:border-amber-500/60 cursor-pointer";
+
+                const baseStats = char.isTransformable ? char.stats.humana : char.stats;
+
+                const card = document.createElement('div');
+                card.className = `${border} p-4 rounded-xl flex flex-col justify-between transition-all`;
+                card.onclick = () => {
+                    gameState.storyHeroId = char.id;
+                    document.getElementById('btn-start-story-act').disabled = false;
+                    renderStorySingleGrid();
+                };
+
+                card.innerHTML = `
+                    <div class="flex items-center gap-3 mb-2">
+                        <div class="w-12 h-12 rounded border border-amber-700/50 bg-black p-1 flex items-center justify-center">
+                            ${char.svg}
+                        </div>
+                        <div>
+                            <h4 class="font-gothic text-amber-400 font-bold text-sm">${char.name}</h4>
+                            <p class="text-[10px] font-medieval text-zinc-400">${char.title}</p>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-1 text-[10px] font-medieval bg-black/50 p-2 rounded border border-zinc-800">
+                        <span>HP: <b class="text-red-400">${baseStats.hpMax}</b></span>
+                        <span>Atq: <b class="text-amber-300">${baseStats.attack}</b></span>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function renderStoryTeamGrid() {
+            const grid = document.getElementById('story-team-grid');
+            grid.innerHTML = '';
+
+            document.getElementById('team-count').textContent = gameState.storySquadIds.length;
+
+            Object.values(CHARACTERS_DATA).forEach(char => {
+                if (char.isUnlocked === false) return;
+                if (char.id === 'dragao') return; // Boss não pode lutar contra ele mesmo no modo história!
+
+                const isSelected = gameState.storySquadIds.includes(char.id);
+                const border = isSelected ? 
+                    "gothic-card gothic-card-gold border-amber-400 bg-amber-950/40" : 
+                    "gothic-card hover:border-amber-500/60 cursor-pointer";
+
+                const card = document.createElement('div');
+                card.className = `${border} p-4 rounded-xl transition-all`;
+                card.onclick = () => {
+                    if (isSelected) {
+                        gameState.storySquadIds = gameState.storySquadIds.filter(id => id !== char.id);
+                    } else if (gameState.storySquadIds.length < 3) {
+                        gameState.storySquadIds.push(char.id);
+                    }
+                    document.getElementById('btn-start-story-act').disabled = gameState.storySquadIds.length !== 3;
+                    renderStoryTeamGrid();
+                };
+
+                card.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 rounded border border-amber-700/50 bg-black p-1 flex items-center justify-center">
+                            ${char.svg}
+                        </div>
+                        <div class="flex-1">
+                            <h4 class="font-gothic text-amber-400 font-bold text-sm">${char.name}</h4>
+                            <span class="text-[10px] font-medieval ${isSelected ? 'text-green-400 font-bold' : 'text-zinc-500'}">
+                                ${isSelected ? '✓ SELECIONADO' : 'Clique para Escolher'}
+                            </span>
+                        </div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function startStoryBattle() {
+            const act = STORY_ACTS[gameState.currentActIndex];
+
+            if (act.isFinalBoss) {
+                // Configuração do Boss Final com Squad
+                gameState.p1Squad = gameState.storySquadIds.map(id => createFighterInstance(id, true));
+                gameState.p1 = gameState.p1Squad.shift(); // Primeiro herói entra
+                
+                // Boss Dragão Ancião com Atributos Aumentados no Ato 6
+                gameState.p2 = createFighterInstance('dragao', false);
+                gameState.p2.name = "Dragão Ancião (Soberano da Tormenta)";
+            } else {
+                gameState.p1 = createFighterInstance(gameState.storyHeroId, true);
+                gameState.p2 = createFighterInstance(act.bossId, false);
+                gameState.p2.name = act.bossName;
+                gameState.p1Squad = [];
+            }
+
+            // Aplicar Multiplicadores por Dificuldade no Inimigo
+            if (gameState.difficulty === 'hard') {
+                gameState.p2.hpMax = Math.floor(gameState.p2.hpMax * 1.3);
+                gameState.p2.hp = gameState.p2.hpMax;
+                gameState.p2.attack += 5;
+            } else if (gameState.difficulty === 'nightmare') {
+                gameState.p2.hpMax = Math.floor(gameState.p2.hpMax * 1.6);
+                gameState.p2.hp = gameState.p2.hpMax;
+                gameState.p2.attack += 10;
+                gameState.p2.critChance += 10;
+            }
+
+            setupBattleArena(act.bg);
+        }
+
+        /* ==========================================================================
+           9. SISTEMA DE LUTAS E EXECUÇÃO
+           ========================================================================== */
+        function createFighterInstance(charId, isPlayer1) {
+            const template = CHARACTERS_DATA[charId];
+            const isTransformable = !!template.isTransformable;
+            const currentForm = isTransformable ? 'humana' : null;
+            const baseStats = isTransformable ? template.stats[currentForm] : template.stats;
+
+            return {
+                id: template.id,
+                name: template.name,
+                svg: template.svg,
+                isPlayer1: isPlayer1,
+                isTransformable: isTransformable,
+                currentForm: currentForm,
+                hpMax: baseStats.hpMax,
+                hp: baseStats.hpMax,
+                staminaMax: baseStats.staminaMax,
+                stamina: baseStats.staminaMax,
+                attack: baseStats.attack,
+                defense: baseStats.defense,
+                initiative: baseStats.initiative,
+                critChance: baseStats.critChance,
+                statusEffects: [],
+                skills: isTransformable ? template.skills[currentForm] : template.skills
+            };
+        }
+
+        function setupBattleArena(bgClass) {
+            document.getElementById('screen-pvp-setup').classList.add('hidden');
+            document.getElementById('screen-story-select').classList.add('hidden');
+            document.getElementById('screen-arena').classList.remove('hidden');
+
+            document.body.className = `min-h-screen flex flex-col justify-between relative overflow-x-hidden ${bgClass}`;
+
+            gameState.turnCount = 1;
+            gameState.isProcessingTurn = false;
+
+            // Determinar Iniciativa
+            const initP1 = gameState.p1.initiative + Math.floor(Math.random() * 6);
+            const initP2 = gameState.p2.initiative + Math.floor(Math.random() * 6);
+            gameState.activePlayer = initP1 >= initP2 ? 'p1' : 'p2';
+
+            document.getElementById('combat-log').innerHTML = '';
+            logMessage(`⚔️ O combate começou! ${gameState.p1.name} entra no campo de batalha contra ${gameState.p2.name}.`, 'text-amber-400 font-bold');
+
+            updateUI();
+            checkAITurn();
+        }
+
+        function updateUI() {
+            const p1 = gameState.p1;
+            const p2 = gameState.p2;
+
+            // P1 UI
+            document.getElementById('name-p1').textContent = p1.name;
+            document.getElementById('avatar-p1').innerHTML = p1.svg;
+            document.getElementById('form-p1').textContent = p1.currentForm ? `[${p1.currentForm}]` : '';
+            document.getElementById('hp-text-p1').textContent = `${Math.max(0, Math.ceil(p1.hp))}/${p1.hpMax}`;
+            document.getElementById('hp-bar-p1').style.width = `${Math.max(0, (p1.hp / p1.hpMax) * 100)}%`;
+            document.getElementById('sta-text-p1').textContent = `${Math.ceil(p1.stamina)}/${p1.staminaMax}`;
+            document.getElementById('sta-bar-p1').style.width = `${Math.max(0, (p1.stamina / p1.staminaMax) * 100)}%`;
+            document.getElementById('atk-p1').textContent = p1.attack;
+            document.getElementById('def-p1').textContent = p1.defense;
+            document.getElementById('ini-p1').textContent = p1.initiative;
+            document.getElementById('crit-p1').textContent = `${p1.critChance}%`;
+
+            // P2 UI
+            document.getElementById('name-p2').textContent = p2.name;
+            document.getElementById('avatar-p2').innerHTML = p2.svg;
+            document.getElementById('form-p2').textContent = p2.currentForm ? `[${p2.currentForm}]` : '';
+            document.getElementById('hp-text-p2').textContent = `${Math.max(0, Math.ceil(p2.hp))}/${p2.hpMax}`;
+            document.getElementById('hp-bar-p2').style.width = `${Math.max(0, (p2.hp / p2.hpMax) * 100)}%`;
+            document.getElementById('sta-text-p2').textContent = `${Math.ceil(p2.stamina)}/${p2.staminaMax}`;
+            document.getElementById('sta-bar-p2').style.width = `${Math.max(0, (p2.stamina / p2.staminaMax) * 100)}%`;
+            document.getElementById('atk-p2').textContent = p2.attack;
+            document.getElementById('def-p2').textContent = p2.defense;
+            document.getElementById('ini-p2').textContent = p2.initiative;
+            document.getElementById('crit-p2').textContent = `${p2.critChance}%`;
+
+            // Squad Bar (se houver reservas no Raid Boss)
+            const squadBar = document.getElementById('squad-bar');
+            const squadList = document.getElementById('squad-list');
+            if (gameState.p1Squad.length > 0) {
+                squadBar.classList.remove('hidden');
+                squadList.innerHTML = gameState.p1Squad.map(hero => `
+                    <span class="px-2 py-0.5 rounded bg-zinc-900 border border-amber-800/50 text-amber-300 font-bold">
+                        ${hero.name} (${Math.ceil(hero.hp)} HP)
+                    </span>
+                `).join('');
+            } else {
+                squadBar.classList.add('hidden');
+            }
+
+            // Indicador do Turno
+            const active = gameState[gameState.activePlayer];
+            document.getElementById('active-player-name').textContent = active.name;
+            document.getElementById('active-player-name').className = gameState.activePlayer === 'p1' ? 'text-amber-400 font-bold' : 'text-red-500 font-bold';
+            document.getElementById('turn-indicator').textContent = `Turno ${gameState.turnCount}`;
+
+            // Botoes de Habilidades do Jogador Ativo
+            const isHumanTurn = (gameState.mode === 'pvp') || (gameState.mode === 'story' && gameState.activePlayer === 'p1');
+            const skills = active.skills;
+
+            for (let i = 0; i < 3; i++) {
+                const btn = document.getElementById(`btn-skill-${i}`);
+                const skill = skills[i];
+
+                if (skill) {
+                    document.getElementById(`skill-${i}-name`).textContent = skill.name;
+                    document.getElementById(`skill-${i}-cost`).textContent = skill.cost ? `${skill.cost} STA` : '';
+                    document.getElementById(`skill-${i}-desc`).textContent = skill.desc;
+
+                    const canAfford = active.stamina >= (skill.cost || 0);
+                    btn.disabled = !isHumanTurn || !canAfford || gameState.isProcessingTurn;
+                }
+            }
+
+            document.getElementById('btn-skill-special').disabled = !isHumanTurn || gameState.isProcessingTurn;
+        }
+
+        function animateDice3D(val, callback) {
+            playSound('dice');
+            const diceContainer = document.getElementById('dice-container');
+            const diceValue = document.getElementById('dice-value');
+
+            diceContainer.classList.add('dice-rolling');
+            diceValue.textContent = val;
+
+            setTimeout(() => {
+                diceContainer.classList.remove('dice-rolling');
+                if (callback) callback();
+            }, 700);
+        }
+
+        function executeSkill(skillIndex) {
+            if (gameState.isProcessingTurn) return;
+
+            const attacker = gameState[gameState.activePlayer];
+            const defender = gameState[gameState.activePlayer === 'p1' ? 'p2' : 'p1'];
+            const skill = attacker.skills[skillIndex];
+
+            if (!skill || attacker.stamina < (skill.cost || 0)) return;
+
+            gameState.isProcessingTurn = true;
+            attacker.stamina -= (skill.cost || 0);
+
+            // Animação de Partículas e Som de Ataque
+            triggerAttackFX(skill.fxColor || '#ef4444');
+            playSound(skill.fxColor === '#f59e0b' ? 'fire' : 'slash');
+
+            // Habilidade de Transformação
+            if (skill.isTransform) {
+                transformToDragon(attacker);
+                finishTurn();
+                return;
+            }
+
+            // D20 Roll
+            const diceRoll = Math.floor(Math.random() * 20) + 1;
+            document.getElementById('dice-result-text').textContent = `${attacker.name} rolou D20: [${diceRoll}]`;
+
+            animateDice3D(diceRoll, () => {
+                let logText = "";
+                let logClass = "text-zinc-300";
+
+                if (diceRoll === 1) {
+                    logText = `🎲 ERRO CRÍTICO! ${attacker.name} errou completamente a habilidade ${skill.name}.`;
+                    logClass = "text-red-400 italic";
+                } else if (skill.type === 'heal') {
+                    attacker.hp = Math.min(attacker.hpMax, attacker.hp + skill.heal);
+                    logText = `✨ ${attacker.name} usou ${skill.name} e recuperou ${skill.heal} de Vida!`;
+                    logClass = "text-emerald-400 font-bold";
+                } else {
+                    const isCrit = (diceRoll === 20) || (Math.random() * 100 < (attacker.critChance + (skill.bonusCrit || 0)));
+                    const critMult = isCrit ? 1.75 : 1.0;
+                    const diceMod = (diceRoll / 10);
+
+                    let baseAtk = attacker.attack * skill.multiplier;
+
+                    if (skill.scalingMissingHp) {
+                        baseAtk *= (1 + (1 - (attacker.hp / attacker.hpMax)));
+                    }
+
+                    let rawDamage = (baseAtk * diceMod * critMult) - (defender.defense * 0.35);
+                    let finalDamage = Math.max(6, Math.floor(rawDamage));
+
+                    defender.hp -= finalDamage;
+
+                    // Efeitos Secundários
+                    if (skill.effect === 'poison') defender.statusEffects.push({ type: 'poison', duration: 2, damage: 8 });
+                    if (skill.effect === 'bleed') defender.statusEffects.push({ type: 'bleed', duration: 2, damage: 10 });
+                    if (skill.effect === 'drain_sta') defender.stamina = Math.max(0, defender.stamina - 20);
+                    if (skill.effect === 'debuff_def') defender.defense = Math.max(2, defender.defense - 4);
+
+                    if (skill.lifesteal) {
+                        const heal = Math.floor(finalDamage * skill.lifesteal);
+                        attacker.hp = Math.min(attacker.hpMax, attacker.hp + heal);
+                    }
+                    if (skill.selfDamage) attacker.hp -= skill.selfDamage;
+
+                    // Efeito de Tremer a Tela no Golpe
+                    const defenderCard = document.getElementById(gameState.activePlayer === 'p1' ? 'card-p2' : 'card-p1');
+                    defenderCard.classList.add('animate-shake');
+                    setTimeout(() => defenderCard.classList.remove('animate-shake'), 450);
+
+                    logText = `⚔️ ${attacker.name} lançou ${skill.name}! ${isCrit ? '🔥 CRÍTICO!' : ''} Causou ${finalDamage} de dano!`;
+                    logClass = isCrit ? "text-amber-300 font-bold" : "text-zinc-200";
+                }
+
+                logMessage(logText, logClass);
+                checkBattleEnd();
+            });
+        }
+
+        function transformToDragon(fighter) {
+            const template = CHARACTERS_DATA.dragao;
+            fighter.currentForm = 'dragao';
+            fighter.svg = SVGS.dragao_boss;
+
+            const stats = template.stats.dragao;
+            fighter.hpMax = stats.hpMax;
+            fighter.hp = stats.hpMax;
+            fighter.attack = stats.attack;
+            fighter.defense = stats.defense;
+            fighter.initiative = stats.initiative;
+            fighter.skills = template.skills.dragao;
+
+            logMessage(`🔥 O DRAGÃO ANCIÃO DESPERTOU SUA FORMA COMPLETA! HP aumentado para 350!`, 'text-red-500 font-bold');
+        }
+
+        function executeRestAction() {
+            if (gameState.isProcessingTurn) return;
+
+            const attacker = gameState[gameState.activePlayer];
+            gameState.isProcessingTurn = true;
+
+            attacker.stamina = Math.min(attacker.staminaMax, attacker.stamina + 35);
+            logMessage(`🧘 ${attacker.name} meditou e recuperou +35 de Estamina.`, 'text-blue-300');
+
+            setTimeout(() => {
+                finishTurn();
+            }, 350);
+        }
+
+        function checkBattleEnd() {
+            const p1 = gameState.p1;
+            const p2 = gameState.p2;
+
+            // Se o Dragão Boss do Ato 6 perder a vida na Forma Humana, ele se transforma na Segunda Fase!
+            if (p2.id === 'dragao' && p2.currentForm === 'humana' && p2.hp <= 0) {
+                transformToDragon(p2);
+                updateUI();
+                finishTurn();
+                return;
+            }
+
+            // Troca de Herói do Squad se o P1 Morrer no Ato 6
+            if (p1.hp <= 0 && gameState.p1Squad.length > 0) {
+                logMessage(`💀 ${p1.name} tombou em combate! Próximo herói entrando...`, 'text-red-500 font-bold');
+                gameState.p1 = gameState.p1Squad.shift();
+                updateUI();
+                finishTurn();
+                return;
+            }
+
+            if (p1.hp <= 0 || p2.hp <= 0) {
+                const p1Won = p1.hp > 0;
+                const winner = p1Won ? p1 : p2;
+
+                setTimeout(() => {
+                    document.getElementById('modal-title').textContent = p1Won ? "VITÓRIA!" : "DERROTA!";
+                    document.getElementById('modal-message').textContent = p1Won ? 
+                        `Você triunfou sobre ${p2.name}!` : 
+                        `Sua alma foi devorada pelas trevas da tormenta.`;
+
+                    // Checa Vitoria do Ato Final para Desbloqueio
+                    if (p1Won && gameState.mode === 'story' && STORY_ACTS[gameState.currentActIndex].isFinalBoss) {
+                        unlockDragonAndPrincessUpgrade(true);
+                        document.getElementById('modal-message').innerHTML = `
+                            🎉 <b>PARABÉNS! VOCÊ DERROTOU O DRAGÃO ANCIÃO!</b><br>
+                            Você desbloqueou o <b>Dragão Ancião</b> e o upgrade <b>Princesa Ascendida</b>!
+                        `;
+                    }
+
+                    document.getElementById('modal-gameover').classList.remove('hidden');
+                }, 600);
+                return;
+            }
+
+            finishTurn();
+        }
+
+        function finishTurn() {
+            gameState.activePlayer = gameState.activePlayer === 'p1' ? 'p2' : 'p1';
+            if (gameState.activePlayer === 'p1') gameState.turnCount++;
+
+            const current = gameState[gameState.activePlayer];
+
+            // Regeneração Passiva de Estamina
+            current.stamina = Math.min(current.staminaMax, current.stamina + 10);
+
+            // Processar Status Effects
+            if (current.statusEffects.length > 0) {
+                current.statusEffects.forEach(e => {
+                    current.hp -= e.damage;
+                    logMessage(`🩸 ${current.name} sofreu ${e.damage} de dano por ${e.type === 'poison' ? 'Veneno' : 'Sangramento'}.`, 'text-purple-400');
+                    e.duration--;
+                });
+                current.statusEffects = current.statusEffects.filter(e => e.duration > 0);
+            }
+
+            gameState.isProcessingTurn = false;
+            updateUI();
+            checkAITurn();
+        }
+
+        /* --- IA ADAPTATIVA E INTELIGENTE DO INIMIGO --- */
+        function checkAITurn() {
+            if (gameState.mode === 'story' && gameState.activePlayer === 'p2' && gameState.p2.hp > 0) {
+                gameState.isProcessingTurn = true;
+
+                setTimeout(() => {
+                    const ai = gameState.p2;
+
+                    // Decisão Tática da IA
+                    let skillIndex = -1;
+
+                    if (ai.isTransformable && ai.currentForm === 'humana' && ai.stamina >= 30) {
+                        skillIndex = 2; // Transforma imediatamente
+                    } else if (ai.stamina >= ai.skills[2].cost) {
+                        skillIndex = 2;
+                    } else if (ai.stamina >= ai.skills[1].cost) {
+                        skillIndex = 1;
+                    } else if (ai.stamina >= ai.skills[0].cost) {
+                        skillIndex = 0;
+                    }
+
+                    if (skillIndex !== -1) {
+                        gameState.isProcessingTurn = false;
+                        executeSkill(skillIndex);
+                    } else {
+                        gameState.isProcessingTurn = false;
+                        executeRestAction();
+                    }
+                }, 900);
+            }
+        }
+
+        function handleModalNext() {
+            document.getElementById('modal-gameover').classList.add('hidden');
+
+            if (gameState.mode === 'story' && gameState.p1.hp > 0) {
+                if (gameState.currentActIndex < STORY_ACTS.length - 1) {
+                    gameState.currentActIndex++;
+                    openStoryActSetup();
+                } else {
+                    returnToIntro();
+                }
+            } else {
+                returnToIntro();
+            }
+        }
+
+        function logMessage(msg, colorClass = "text-zinc-300") {
+            const logBox = document.getElementById('combat-log');
+            const p = document.createElement('p');
+            p.className = `${colorClass} leading-tight mb-1`;
+            p.textContent = msg;
+            logBox.appendChild(p);
+            logBox.scrollTop = logBox.scrollHeight;
+        }
+
+        /* Carregar Save Game ao Iniciar */
+        window.onload = () => {
+            loadAchievementState();
+        };
+    </script>
+</body>
+</html>
