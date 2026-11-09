@@ -1,25 +1,29 @@
 programa {
   funcao inicio() {
-    // Entendimento
-    // Ler a quantidade de pessoas e calcular a quantidade de produtos para comprar
-  
-    // Infos e variáveis
-    inteiro pessoas
-    real carne, cerveja, agua, refri
-    // entrada de dados
-    escreva("Quantidade de pessoas: ")
-    leia(pessoas)
-    // processamento
-    carne = pessoas  * 0.5
-    cerveja = pessoas * 1
-    agua = pessoas * 0.5
-    refri = pessoas * 0.2
+    inteiro idade
+    cadeia nome
+    escreva("Sua idade: ")
+    leia(idade)
+    escreva("Seu nome: ")
+    leia(nome)
+  se(idade < 18){
+    escreva("Olá " + nome + " você tem " + idade + " anos, será um prazer telo conosco!")
+  }
+  se(idade >= 18){
+    escreva("Vaza!")
+
+  }
+se(nome == "Rafael"){
+  escreva("\nVocê pode entrar escondido...")
+}
+
+se(nome != "Rafael"){
+  escreva("\nVocê não aparece nos créditos.")
+}
 
 
-    // saídas
-    escreva("Carne: " + carne)
-    escreva("\nCerveja: " + cerveja)
-    escreva("\nÁgua: " + agua)
-    escreva("\nRefri: " + refri)
+
+
+
   }
 }
